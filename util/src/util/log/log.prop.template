@@ -1,0 +1,3 @@
+log.file = tmp/file.log
+log.pattern = %d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%M - %m%n
+log.level = 
