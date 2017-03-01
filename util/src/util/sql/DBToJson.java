@@ -12,10 +12,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Properties;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.WriterAppender;
+import util.log.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,7 +26,6 @@ import com.google.gson.JsonPrimitive;
  */
 public class DBToJson
 {
-	private static Logger log;
 	private Properties config;
 	private DB source;
 	private String sourceSchema;
@@ -46,8 +42,7 @@ public class DBToJson
 		try
 		{
 			config.load(new FileReader(cFile));
-			initLogger();
-			log.info("Connessione al DB...");
+			Log.info("Connessione al DB...");
 			String driver, url, user, pass;
 			driver = config.getProperty("source.driver");
 			url = config.getProperty("source.url");
@@ -59,42 +54,17 @@ public class DBToJson
 		}
 		catch(FileNotFoundException e)
 		{
-			log.error("File non trovato: " + e.getMessage());
+			System.err.println(e.getMessage());
+			Log.error("File non trovato: " + e.getMessage());
 		}
 		catch(IOException e)
 		{
-			log.error("Impossibile leggere il file di configurazione: " + e.getMessage());
+			Log.error("Impossibile leggere il file di configurazione: " + e.getMessage());
 		}
 		catch(Exception e)
 		{
-			log.error("Errore generico: " + e.getMessage());
+			Log.error("Errore generico: " + e.getMessage());
 		}
-	}
-
-/*
- * Inizializzazione del logger. I parametri sono nel file di prop.
- */
-
-	private void initLogger()
-	{
-		PatternLayout pl;
-		PrintWriter pw = null;
-		WriterAppender wa;
-		log = Logger.getLogger("DB2JSON");
-		log.setLevel(Level.DEBUG);
-		pl = new PatternLayout(config.getProperty("log.pattern"));
-		try
-		{
-			pw = new PrintWriter(config.getProperty("log.file"));
-		}
-		catch(FileNotFoundException e)
-		{
-			System.err.println("File di log " + " non trovato: " + e.getMessage());
-		}
-		wa = new WriterAppender(pl, pw);
-		log.addAppender(wa);
-		wa = new WriterAppender(pl, System.out);
-		log.addAppender(wa);
 	}
 
 /*
@@ -113,7 +83,7 @@ public class DBToJson
 		}
 		catch(SQLException e)
 		{
-			log.error("Errore SQL generico: " + e.getMessage());
+			Log.error("Errore SQL generico: " + e.getMessage());
 		}
 		return rs;
 	}
@@ -134,7 +104,7 @@ public class DBToJson
 		}
 		catch(SQLException e)
 		{
-			log.error("Errore SQL generico: " + e.getMessage());
+			Log.error("Errore SQL generico: " + e.getMessage());
 		}
 		return rs;
 	}
@@ -193,7 +163,7 @@ public class DBToJson
  */
 				int colNum = rsmd.getColumnCount();
 				jTable.add("numberOfColumns", new JsonPrimitive(colNum));
-				log.info("Tabella: " + table + " (" + colNum + " colonne)");
+				Log.info("Tabella: " + table + " (" + colNum + " colonne)");
 /*
  * Si crea l'elenco delle colonne, che si aggiungeranno a jTable come
  * JsonObject, cioè coppie chiave-valore, compresa la lunghezza-precisione.
@@ -204,7 +174,7 @@ public class DBToJson
 					String cType = rsmd.getColumnTypeName(i);
 					int cSize = rsmd.getPrecision(i);
 					jColumns.add(column, new JsonPrimitive(cType + "(" + cSize + ")"));
-					log.debug("Colonna: " + table + "." + column + " " + cType + "(" + cSize + ")");
+					Log.debug("Colonna: " + table + "." + column + " " + cType + "(" + cSize + ")");
 				}
 /*
  * Si itera sui record, ognuno dei quali è un array di stringhe (jRecord), e
@@ -289,11 +259,11 @@ public class DBToJson
 		}
 		catch(SQLException e)
 		{
-			log.error("Errore SQL generico: " + e.getMessage());
+			Log.error("Errore SQL generico: " + e.getMessage());
 		}
 		catch(FileNotFoundException e)
 		{
-			log.error("File non trovato: " + e.getMessage());
+			Log.error("File non trovato: " + e.getMessage());
 		}
 	}
 }

@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import util.log.Log;
+
 /** Description of the Class */
 
 public class DB
@@ -16,15 +18,8 @@ public class DB
 	public static String mysqlDriver = "com.mysql.jdbc.Driver";
 	public static String urlTest = "jdbc:mysql://gauss/abi";
 	public static String urlGauss = "jdbc:mysql://gauss/abi";
-	// public static String urlTest =
-	// "jdbc:postgresql://192.168.20.46:5432/abi_test3";
 	public static String urlEsercizio = "jdbc:postgresql://anagrafe.iccu.sbn.it:5432/abi2";
 	public static String urlEsercizioGiuliano = "jdbc:postgresql://192.168.20.131:5432/abi2";
-
-	private void err(String str)
-	{
-		System.err.println(str);
-	}
 
 	public PreparedStatement prepare(String sql)
 	{
@@ -36,8 +31,7 @@ public class DB
 		}
 		catch(SQLException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Log.error(e.getMessage());
 		}
 		return temp;
 	}
@@ -54,7 +48,7 @@ public class DB
 		}
 		catch(SQLException e)
 		{
-			e.printStackTrace();
+			Log.error(e.getMessage());
 		}
 		return rs;
 	}
@@ -72,19 +66,19 @@ public class DB
 		}
 		catch(Exception e)
 		{
-			err("ERROR: failed to load JDBC driver.");
+			Log.error("ERROR: failed to load JDBC driver.");
 		}
 		try
 		{
 			conn = DriverManager.getConnection(url, username, password);
 			if(conn == null)
 			{
-				err("Connessione nulla!");
+				Log.error("Connessione nulla!");
 			}
 		}
 		catch(SQLException e)
 		{
-			err("ERROR: failed to connect!");
+			Log.error("ERROR: failed to connect!");
 		}
 	}
 
@@ -101,20 +95,19 @@ public class DB
 		}
 		catch(Exception e)
 		{
-			err("ERROR: failed to load JDBC driver (" + driver + ")");
+			Log.error("ERROR: failed to load JDBC driver (" + driver + ")");
 		}
 		try
 		{
 			conn = DriverManager.getConnection(url, username, password);
 			if(conn == null)
 			{
-				err("Connessione nulla!");
+				Log.error("Connessione nulla!");
 			}
 		}
 		catch(SQLException e)
 		{
-			err("ERROR: failed to connect!");
-			e.printStackTrace();
+			Log.error("ERROR: failed to connect!");
 		}
 	}
 
@@ -127,8 +120,8 @@ public class DB
 		}
 		catch(SQLException e)
 		{
-			this.err("ERROR: Fetch statement failed: " + e.getMessage());
-			this.err(e.toString());
+			Log.error("ERROR: Fetch statement failed: " + e.getMessage());
+			Log.error(e.toString());
 		}
 	}
 }
