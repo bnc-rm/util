@@ -1,5 +1,7 @@
 package util.log;
+
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,15 +25,26 @@ public final class Log
 	public static Logger log;
 	private static Properties config;
 
-	public static void init(String logFile) throws IOException
+	public static void init(String propFile)
 	{
 		config = new Properties();
-		config.load(new FileReader("log.prop"));
+		try
+		{
+			config.load(new FileReader(propFile));
+		}
+		catch(FileNotFoundException e)
+		{
+			System.err.println("File log.prop non trovato\n" + e.getMessage());
+		}
+		catch(IOException e)
+		{
+			System.err.println("File log.prop non trovato\n" + e.getMessage());
+		}
 		PatternLayout pl;
 		File lf;
 		PrintWriter pw;
 		WriterAppender wa;
-		log = Logger.getLogger("log.prop");
+		log = Logger.getLogger(config.getProperty("log.file"));
 		Level level = null;
 		switch(config.getProperty("log.level"))
 		{
@@ -59,13 +72,19 @@ public final class Log
 		}
 		log.setLevel(level);
 		pl = new PatternLayout(config.getProperty("log.pattern"));
-// lf = new File(config.getProperty("log.file"));
-		lf = new File(logFile);
-		pw = new PrintWriter(lf);
-		wa = new WriterAppender(pl, pw);
-		log.addAppender(wa);
-		wa = new WriterAppender(pl, System.out);
-		log.addAppender(wa);
+		lf = new File(config.getProperty("log.file"));
+		try
+		{
+			pw = new PrintWriter(lf);
+			wa = new WriterAppender(pl, pw);
+			log.addAppender(wa);
+			wa = new WriterAppender(pl, System.out);
+			log.addAppender(wa);
+		}
+		catch(FileNotFoundException e)
+		{
+			System.err.println("File " + propFile + " non trovato\n" + e.getMessage());
+		}
 	}
 
 	public static void trace(String msg)
