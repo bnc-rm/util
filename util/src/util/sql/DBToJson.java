@@ -250,7 +250,7 @@ public class DBToJson
 /*
  * Si scarica jTable sull'apposito file e si rilascia.
  */
-				PrintWriter pw = new PrintWriter(new File(outputDir + table + ".json"));
+				PrintWriter pw = new PrintWriter(new File(outputDir + "/" + table + ".json"));
 				pw.println(gson.toJson(jTable));
 				pw.close();
 				jTable = null;

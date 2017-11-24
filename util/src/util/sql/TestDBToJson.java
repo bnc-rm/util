@@ -3,6 +3,8 @@ package util.sql;
 import java.io.File;
 import java.io.IOException;
 
+import util.log.Log;
+
 
 /*
  * Questa classe dovrebbe leggere un JSON che rappresenta un database e
@@ -13,6 +15,7 @@ public class TestDBToJson
 
 	public static void main(String[] args)
 	{
+		Log.init(args[0]);
 		DBToJson dj;
 		try
 		{
