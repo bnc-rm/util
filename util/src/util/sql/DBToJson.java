@@ -1,4 +1,5 @@
 package util.sql;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -19,7 +20,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-
+import com.google.gson.stream.JsonWriter;
 
 /*
  * Classe per la serializzazione di un DB in JSON.
@@ -30,6 +31,7 @@ public class DBToJson
 	private DB source;
 	private String sourceSchema;
 	private Gson gson;
+	private int maxRows = Integer.MAX_VALUE;
 
 /*
  * Costruttore che legge il prop file. Le proprietà più importanti sono
@@ -51,6 +53,10 @@ public class DBToJson
 			source = new DB(driver, url, user, pass);
 			sourceSchema = config.getProperty("source.schema");
 			gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+			if(config.getProperty("source.limit") != null)
+			{
+				maxRows = Integer.valueOf(config.getProperty("source.limit"));
+			}
 		}
 		catch(FileNotFoundException e)
 		{
@@ -141,16 +147,24 @@ public class DBToJson
 			{
 				String table = rsTables.getString("TABLE_NAME");
 				if(table.startsWith("sys")) continue;
+
 /*
- * Ogni tabella è un oggetto jTable che conterrà i nomi delle colonne e poi
- * tutti i record. C'è anche qualche valore di controllo, tipo il numero di
- * colonne e soprattutto il numero di record. I vari oggetti verranno assemblati
- * insieme solo alla fine, quando il numero di record sarà noto. La prima
- * proprietà della tabella è ovviamente "name".
+ * Poiché alcune tabelle possono essere troppo grandi da gestire in memoria,
+ * conviene scaricare i record un po' alla volta sull'output, invece di
+ * aspettare che un'intera tabella sia caricata in un array Gson. Per questo si
+ * usa un oggetto JsonWriter
  */
-				JsonObject jTable = new JsonObject();
-				jTable.add("name", new JsonPrimitive(table));
-				JsonObject jColumns = new JsonObject();
+				PrintWriter pw = new PrintWriter(new File(outputDir + "/" + table + ".json"));
+				JsonWriter jw = new JsonWriter(pw);
+				jw.setIndent("  ");
+
+/*
+ * Si apre un oggetto a cui si assegna subito la proprietà "name", il cui valore
+ * è il nome della tabella
+ */
+
+				jw.beginObject();
+				jw.name("name").value(table);
 /*
  * I nomi delle colonne si ricavano dal result set dei record, invece che dai
  * metadati del database, quindi in questa fase.
@@ -161,12 +175,13 @@ public class DBToJson
 /*
  * Si può già salvare una proprietà "numero di colonne" della tabella attuale
  */
+				JsonObject jColumns = new JsonObject();
 				int colNum = rsmd.getColumnCount();
-				jTable.add("numberOfColumns", new JsonPrimitive(colNum));
+				jw.name("numberOfColumns").value(colNum);
 				Log.info("Tabella: " + table + " (" + colNum + " colonne)");
 /*
- * Si crea l'elenco delle colonne, che si aggiungeranno a jTable come
- * JsonObject, cioè coppie chiave-valore, compresa la lunghezza-precisione.
+ * Si crea l'elenco delle colonne come oggetto jColumns. I valori delle
+ * proprietà comprendono anche la lunghezza-precisione dei singoli campi
  */
 				for(int i = 1; i <= colNum; i++)
 				{
@@ -177,93 +192,105 @@ public class DBToJson
 					Log.debug("Colonna: " + table + "." + column + " " + cType + "(" + cSize + ")");
 				}
 /*
- * Si itera sui record, ognuno dei quali è un array di stringhe (jRecord), e
- * insieme saranno un array di oggetti (jRecords). Intanto si calcola il numero
- * di record che si aggiungerà come proprietà a jTable
+ * L'oggetto jColumns viene scaricato sul writer, senza bisogno di begin o end,
+ * grazie a una versione del metodo toJson che permette di indicare un writer.
  */
-
-				JsonArray jRecords = new JsonArray();
+				jw.flush();
+				jw.name("columns");
+				gson.toJson(jColumns, jw);
+/*
+ * Si itera sui record, ognuno dei quali è un array di stringhe (jRecord), e
+ * insieme saranno un array di oggetti, aperto però come stream per evitare che
+ * una tabella troppo grande esaurisca la memoria
+ */
+				jw.name("records").beginArray();
 				while(rsRecords.next())
 				{
-					rowNum++;
+					if(++rowNum > maxRows)
+					{
+						break;
+					}
 					JsonArray jRecord = new JsonArray();
 					for(int i = 1; i <= colNum; i++)
 					{
-						JsonPrimitive jp;
-						if(rsRecords.getString(i) == null)
+						JsonPrimitive jp = null;
+						try
 						{
-							jRecord.add(new JsonPrimitive(""));
-						}
-						else
-						{
-							switch(rsmd.getColumnType(i))
+							if(rsRecords.getString(i) == null)
 							{
-								case Types.INTEGER:
-									jp = new JsonPrimitive(rsRecords.getLong(i));
-									break;
-								case Types.SMALLINT:
-									jp = new JsonPrimitive(rsRecords.getLong(i));
-									break;
-								case Types.DATE:
-// jp = new JsonPrimitive((rsRecords.getString(i)).replace(" 00:00:00.0", ""));
-									jp = new JsonPrimitive((rsRecords.getString(i)));
-									break;
-								case Types.TIME:
-// jp = new JsonPrimitive((rsRecords.getString(i)).replace(" 00:00:00.0", ""));
-									jp = new JsonPrimitive((rsRecords.getString(i)));
-									break;
-								case Types.TIMESTAMP:
-// jp = new JsonPrimitive((rsRecords.getString(i)).replace(" 00:00:00.0", ""));
-									jp = new JsonPrimitive((rsRecords.getString(i)));
-									break;
-								case Types.VARCHAR:
-									jp = new JsonPrimitive(rsRecords.getString(i));
-									break;
-								case Types.BOOLEAN:
-									jp = new JsonPrimitive(rsRecords.getBoolean(i));
-									break;
-								default:
-									jp = new JsonPrimitive(rsRecords.getString(i));
-									break;
+								jRecord.add(null);
 							}
-							jRecord.add(jp);
+							else
+							{
+								switch(rsmd.getColumnType(i))
+								{
+									case Types.INTEGER:
+										jp = new JsonPrimitive(rsRecords.getLong(i));
+										break;
+									case Types.SMALLINT:
+										jp = new JsonPrimitive(rsRecords.getLong(i));
+										break;
+									case Types.DATE:
+										jp = new JsonPrimitive((rsRecords.getString(i)));
+										break;
+									case Types.TIME:
+										jp = new JsonPrimitive((rsRecords.getString(i)));
+										break;
+									case Types.TIMESTAMP:
+										jp = new JsonPrimitive((rsRecords.getString(i)));
+										break;
+									case Types.VARCHAR:
+										jp = new JsonPrimitive(rsRecords.getString(i));
+										break;
+									case Types.BOOLEAN:
+										jp = new JsonPrimitive(rsRecords.getBoolean(i));
+										break;
+									default:
+										jp = new JsonPrimitive(rsRecords.getString(i));
+										break;
+								}
+							}
 						}
+						catch(SQLException e)
+						{
+							if(e.getMessage().startsWith("Cannot convert value '0000-00-00 00:00:00'"))
+							{
+								Log.error("Data incompatibile con JDBC, sostituita con null: " + e.getMessage());
+								jp = null;
+							}
+						}
+						jRecord.add(jp);
 					}
-					jRecords.add(jRecord);
+					gson.toJson(jRecord, jw);
 				}
-
 /*
  * Finito di iterare i record, è bene chiudere il relativo ResultSet, che può
  * essere molto ingombrante, rilasciando le risorse
  */
 				rsRecords.close();
 /*
- * Ora tutte la parti separate sono pronte e si possono aggiungere a jTable.
- * Prima il numero di record, ormai noto, poi l'oggetto "columns" con i nomi e i
- * tipi di colonne, e infine l'array dei record, con i soli valori. L'array, una
- * volta aggiunto a jTable, si può rilasciare.
+ * Si chiude l'array dei record, si scrive il numero di record alla fine
+ * e poi si chiude tutto
  */
-				jTable.add("numberOfRecords", new JsonPrimitive(rowNum));
-				jTable.add("columns", jColumns);
-				jTable.add("records", jRecords);
-				jRecords = null;
-/*
- * Si scarica jTable sull'apposito file e si rilascia.
- */
-				PrintWriter pw = new PrintWriter(new File(outputDir + "/" + table + ".json"));
-				pw.println(gson.toJson(jTable));
+				jw.endArray();
+				jw.name("numberOfRecords").value(--rowNum);
+				jw.endObject();
+				jw.close();
 				pw.close();
-				jTable = null;
 			}
 			rsTables.close();
 		}
 		catch(SQLException e)
 		{
-			Log.error("Errore SQL generico: " + e.getMessage());
+			Log.error("Errore SQL genericoooo: " + e.getMessage());
 		}
 		catch(FileNotFoundException e)
 		{
 			Log.error("File non trovato: " + e.getMessage());
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
 		}
 	}
 }

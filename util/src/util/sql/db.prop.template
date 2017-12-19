@@ -12,6 +12,10 @@ source.url = jtds:sqlserver://server1/wtime
 source.username = xxx
 source.password = yyy
 
+# Massimo numero di righe da estrarre da una tabella, per scopi diagnostici.
+# Se indefinita sono estratte tutte le righe
+source.limit =
+
 target.host = localhost
 target.driver = com.mysql.jdbc.Driver
 target.name = wtime
