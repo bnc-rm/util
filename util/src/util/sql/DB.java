@@ -53,6 +53,23 @@ public class DB
 		return rs;
 	}
 
+	public int update(String query)
+	{
+		Statement stmt = null;
+		int count = 0;
+		try
+		{
+			stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+					ResultSet.CONCUR_UPDATABLE);
+			count = stmt.executeUpdate(query);
+		}
+		catch(SQLException e)
+		{
+			Log.error(e.getMessage());
+		}
+		return count;
+	}
+
 	/*
 	 * Costruttore parametrico. Le credenziali vanno ovviamente cambiate a seconda
 	 * delle reali implementazioni. Meglio sarebbe passare anche quelle al
