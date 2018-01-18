@@ -1,0 +1,23 @@
+## configurazione a livello del source
+log.file = tmp/db.log
+log.pattern = %d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%M - %m%n
+log.level = 
+
+source.host = server1.dom.iccu
+#source.driver = com.microsoft.sqlserver.jdbc.SQLServerDriver
+source.driver = net.sourceforge.jtds.jdbc.Driver
+source.name = wtime
+source.catalog = dbo
+source.url = jtds:sqlserver://server1/wtime
+source.username = xxx
+source.password = yyy
+
+# Massimo numero di righe da estrarre da una tabella, per scopi diagnostici.
+# Se indefinita sono estratte tutte le righe
+source.limit =
+
+target.host = localhost
+target.driver = com.mysql.jdbc.Driver
+target.name = wtime
+target.username = xxx
+target.password = yyy
