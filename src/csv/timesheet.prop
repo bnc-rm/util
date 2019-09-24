@@ -1,0 +1,31 @@
+## query per ripulire la tabella giorni da eventuali giorni dell'anno indicato
+
+giorni.delete = delete from giorni where year(data) = ? 
+
+## 	query per popolare la tabella giorni con i giorni dell'anno indicato
+
+giorni.fill = insert into giorni(select makedate(?, ?))
+
+## nome file del tabellone esportato da europaweb, ma in formato ODS
+
+ods.input = tmp/input/2015.ods
+ods.minsep = [\\.:]
+xlsx.input = tmp/input/2015.xlsx
+#ods.input = tmp/input/2013 tutti.ods
+#ods.template = tmp/input/20141template.ods
+
+# in questo template si prova l'approssimazione al quarto d'ora
+ods.template = tmp/input/2015template15min.ods
+
+xlsx.template = tmp/input/template.xlsx
+ods.output.headerA = DATAELABORATA
+ods.output.headerB = MINBASELAV
+ods.output.file.prefix = 2015
+ods.output.dir = tmp/output/ods/2015-15min
+xlsx.output.dir = tmp/output/xlsx/2015-15min
+date.A = 01/01/2015
+date.B = 01/01/2016
+
+log.file = tmp/timesheet.log
+log.pattern = %d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%M - %m%n
+log.level = 
