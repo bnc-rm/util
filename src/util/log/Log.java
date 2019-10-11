@@ -1,8 +1,8 @@
 package util.log;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Properties;
@@ -41,12 +41,12 @@ public final class Log
 			System.err.println("File log.prop non trovato\n" + e.getMessage());
 		}
 		PatternLayout pl;
-		File lf;
+		FileWriter fw;
 		PrintWriter pw;
 		WriterAppender wa;
 		log = Logger.getLogger(config.getProperty("log.file"));
 		Level level = null;
-		switch(config.getProperty("log.level"))
+		switch (config.getProperty("log.level"))
 		{
 			case "trace":
 				level = Level.TRACE;
@@ -71,11 +71,25 @@ public final class Log
 				break;
 		}
 		log.setLevel(level);
+
+/*
+ * Imposta il layout del log, e configura la pipeline di output, attraverso una
+ * serie di writer. Il primo di essi permette l'append di un file esistente, in
+ * base alla property log.append, senza valore (esiste o no).
+ */
+
 		pl = new PatternLayout(config.getProperty("log.pattern"));
-		lf = new File(config.getProperty("log.file"));
 		try
 		{
-			pw = new PrintWriter(lf);
+			if(config.getProperty("log.append") != null)
+			{
+				fw = new FileWriter(config.getProperty("log.file"), true);
+			}
+			else
+			{
+				fw = new FileWriter(config.getProperty("log.file"));
+			}
+			pw = new PrintWriter(fw);
 			wa = new WriterAppender(pl, pw);
 			log.addAppender(wa);
 			wa = new WriterAppender(pl, System.out);
@@ -83,7 +97,13 @@ public final class Log
 		}
 		catch(FileNotFoundException e)
 		{
-			System.err.println("File " + config.getProperty("log.file") + " non trovato\n" + e.getMessage());
+			System.err.println("File " + config.getProperty("log.file") + " non trovato\n"
+					+ e.getMessage());
+		}
+		catch(IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
