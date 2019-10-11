@@ -83,7 +83,7 @@ public final class Log
 		}
 		catch(FileNotFoundException e)
 		{
-			System.err.println("File " + propFile + " non trovato\n" + e.getMessage());
+			System.err.println("File " + config.getProperty("log.file") + " non trovato\n" + e.getMessage());
 		}
 	}
 
