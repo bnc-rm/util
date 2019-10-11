@@ -14,12 +14,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.WriterAppender;
-//import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-//import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.odftoolkit.simple.SpreadsheetDocument;
 import org.odftoolkit.simple.table.Row;
 import org.odftoolkit.simple.table.Table;
+//import org.apache.poi.ss.usermodel.Sheet;
+//import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class Convert
 {
@@ -28,12 +27,9 @@ public class Convert
 	private String dateA;
 	private String dateB;
 	private SpreadsheetDocument input, output;
-  private Workbook wbInput, wbOutput = null;
-
-	private int sheetNum;
+  private int sheetNum;
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 	private String oFilePrefix, oDirName;
-	private String xDirName;
 	private String minSep;
 
 	private void initLogger()
