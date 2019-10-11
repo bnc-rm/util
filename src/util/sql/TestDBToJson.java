@@ -20,11 +20,14 @@ public class TestDBToJson
 		try
 		{
 			System.err.println(new File(".").getCanonicalPath());
+			System.err.println(Log.log.getLevel());
 		}
 		catch(IOException e)
 		{
 			e.printStackTrace();
 		}
+		Log.info("File prop: " + args[0]);
+		Log.info("File json: " + args[1]);
 		dj = new DBToJson(args[0]);
 		dj.output(args[1]);
 	}
